@@ -126,7 +126,7 @@ test('tax tabs switch between percentages and dollar amounts with keyboard and A
 });
 
 test('rate graph leaves gaps for undefined rates and plots actual zero rates',()=>{
- const state=structuredClone(DEFAULTS);Object.assign(state,{age:65,retire:65,death:71,expenses:10000,inflation:0,equity:0,bond:0,yield:0,workIncome:0,retiredIncome:0,pensionIncome:20000,pensionStart:69,order:'rrsp,nonreg,tfsa'});
+ const state=structuredClone(DEFAULTS);Object.assign(state,{age:65,retire:65,death:71,expenses:10000,inflation:0,equity:0,bond:0,yield:0,workIncome:0,retiredIncome:0,pensionIncome:20000,pensionStart:69,annualRrspWithdrawal:10000});
  for(const account of Object.values(state.accounts)){account.balance=0;account.saving=0;}
  state.accounts.rrsp.balance=15000;state.accounts.tfsa.balance=100000;
  const {node,rows}=renderCharts(state,800,'rate');
@@ -144,7 +144,7 @@ test('rate graph leaves gaps for undefined rates and plots actual zero rates',()
 });
 
 test('tax readout identifies gross taxable income as the rate basis for the $180,000 spending example',()=>{
- const state=structuredClone(DEFAULTS);Object.assign(state,{age:65,retire:65,death:65,expenses:180000,inflation:0,equity:0,bond:0,yield:0,workIncome:0,retiredIncome:0,order:'rrsp,nonreg,tfsa',acb:0});
+ const state=structuredClone(DEFAULTS);Object.assign(state,{age:65,retire:65,death:65,expenses:180000,annualRrspWithdrawal:291226.2036909517,inflation:0,equity:0,bond:0,yield:0,workIncome:0,retiredIncome:0,order:'rrsp,nonreg,tfsa',acb:0});
  for(const account of Object.values(state.accounts)){account.balance=0;account.saving=0;}
  state.accounts.rrsp.balance=2000000;
  const {node}=renderCharts(state,800,'rate');

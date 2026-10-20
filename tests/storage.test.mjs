@@ -7,7 +7,7 @@ test('every current form input survives a save/reload, including zero and unchec
  const html=readFileSync(new URL('../dist/index.html',import.meta.url),'utf8');
  const names=[...html.matchAll(/<(?:input|select)\b[^>]*\bname="([^"]+)"/g)].map(match=>match[1]);
  const inputs=Object.fromEntries(names.map((name,i)=>[name,name==='indexTax'?false:String(i)]));
- inputs['rrsp-balance']='0';inputs.equity='6.125';inputs.order='tfsa,nonreg,rrsp';
+ inputs['rrsp-balance']='0';inputs.equity='6.125';inputs.annualRrspWithdrawal='42,000';
  const storage=memoryStorage();assert.equal(saveInputs(storage,inputs),true);
  assert.deepEqual(loadInputs(storage),{values:inputs,failed:false});
  assert.equal(storage.items.size,1);assert.ok(storage.items.has(INPUT_STORAGE_KEY));

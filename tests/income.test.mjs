@@ -4,7 +4,7 @@ import {DEFAULTS,project,incomeTax,incomeTaxDetails,validate} from '../dist/engi
 const near=(actual,expected,tolerance=.02)=>assert.ok(Math.abs(actual-expected)<tolerance,`${actual} != ${expected}`);
 function scenario(overrides={}){
  const s=structuredClone(DEFAULTS);
- Object.assign(s,{age:60,retire:60,death:60,inflation:0,equity:0,bond:0,yield:0,expenses:40000,workIncome:0,retiredIncome:0,acb:0},overrides);
+ Object.assign(s,{annualRrspWithdrawal:0,age:60,retire:60,death:60,inflation:0,equity:0,bond:0,yield:0,expenses:40000,workIncome:0,retiredIncome:0,acb:0},overrides);
  for(const key of ['tfsa','rrsp','nonreg'])s.accounts[key]={balance:0,saving:0,equity:100};
  s.accounts.tfsa.balance=200000;
  return s;
@@ -71,9 +71,9 @@ test('OAS recovery uses the 2026 threshold, is capped at OAS received, and is de
  near(incomeTaxDetails(200000,'ON',2,65,0,18000).oasRecoveryTax,repayment*2);
 });
 
-test('investment withdrawals gross up for income tax and additional OAS recovery',()=>{
- const s=scenario({age:65,retire:65,death:65,expenses:80000,pensionIncome:80000,pensionStart:65,cppIncome:12000,oasIncome:9000,order:'rrsp,nonreg,tfsa'});
- s.accounts.rrsp.balance=200000;s.accounts.tfsa.balance=0;
+test('manual RRSP payment and TFSA remainder fund income tax and additional OAS recovery',()=>{
+ const s=scenario({age:65,retire:65,death:65,expenses:100000,annualRrspWithdrawal:20000,pensionIncome:80000,pensionStart:65,cppIncome:12000,oasIncome:9000,order:'rrsp,nonreg,tfsa'});
+ s.accounts.rrsp.balance=200000;s.accounts.tfsa.balance=100000;
  const [r]=project(s);
  assert.ok(r.rrspWithdrawal>0);assert.ok(r.oasRecoveryTax>0);
  const expected=incomeTaxDetails(101000+r.rrspWithdrawal,'ON',1,65,80000,9000);
@@ -82,16 +82,16 @@ test('investment withdrawals gross up for income tax and additional OAS recovery
  near(r.rrsp,200000-r.rrspWithdrawal);
 });
 
-test('benefits and mandatory RRIF payments reconcile account balances for every withdrawal priority',()=>{
- for(const order of ['nonreg,rrsp,tfsa','rrsp,nonreg,tfsa','tfsa,nonreg,rrsp']){
-  const s=structuredClone(DEFAULTS);Object.assign(s,{order,pensionIncome:24000,pensionStart:60,cppIncome:12000,oasIncome:8500});
+test('benefits, manual RRSP payments and distributions reconcile annually across payment settings',()=>{
+ for(const annualRrspWithdrawal of [0,20000,80000]){
+  const s=structuredClone(DEFAULTS);Object.assign(s,{annualRrspWithdrawal,pensionIncome:24000,pensionStart:60,cppIncome:12000,oasIncome:8500});
   let opening=Object.fromEntries(Object.entries(s.accounts).map(([key,a])=>[key,a.balance]));
   for(const r of project(s)){
    for(const key of ['tfsa','rrsp','nonreg']){
-    const surplus=key==='nonreg'?r.benefitSurplus+r.rrifReinvestment:0;
+    const surplus=key==='nonreg'?r.cashReinvestment-r.distributionCash:0;
     near(r[key],opening[key]+surplus+r.growthByAccount[key]+r.savingsByAccount[key]-r.withdrawalsByAccount[key]);
    }
-   near(r.benefitIncome+r.withdrawals+r.shortfall+r.externalTaxPaid,r.expenses+r.taxPaid+r.benefitSurplus+r.rrifReinvestment);
+   near(r.benefitIncome+r.withdrawals+r.distributionCash+r.shortfall+r.externalTaxPaid,r.expenses+r.taxPaid+r.cashReinvestment);
    near(r.tax,r.taxPaid+r.unpaidTax);
    near(r.totalIncomeTax,r.federalIncomeTax+r.provincialIncomeTax+r.oasRecoveryTax);
    opening={tfsa:r.tfsa,rrsp:r.rrsp,nonreg:r.nonreg};
