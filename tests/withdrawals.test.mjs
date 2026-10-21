@@ -53,11 +53,11 @@ test('tax top-ups use taxable capital and TFSA without increasing the chosen RRS
  near(r.rrspWithdrawal,50000);near(r.nonregWithdrawal,50000);near(r.tfsaWithdrawal,50000);
  assert.ok(r.shortfall>30000);near(r.withdrawals-r.tax+r.shortfall,r.expenses);
 });
-test('registered surplus is reinvested once at year-end and adds cost basis',()=>{
+test('registered surplus is split once at year-end and only non-registered overflow adds cost basis',()=>{
  const [r]=project(scenario({annualRrspWithdrawal:30000,expenses:1000,equity:10}));
  near(r.rrspWithdrawal,30000);near(r.nonregWithdrawal,0);near(r.tfsaWithdrawal,0);
  near(r.cashReinvestment,30000-1000-r.tax);near(r.rrifReinvestment,r.cashReinvestment);
- near(r.nonreg,55000+r.cashReinvestment);near(r.acb,50000+r.cashReinvestment);
+ near(r.tfsa,69000);near(r.nonreg,55000+r.cashReinvestment-14000);near(r.acb,50000+r.cashReinvestment-14000);
 });
 test('removed order/approach/guide values in old saved scenarios cannot change the fixed withdrawal sequence',()=>{
  const baseline=project(scenario())[0];
@@ -70,11 +70,11 @@ test('all annual account, ACB, tax and cash ledgers reconcile across manual sett
   let opening=Object.fromEntries(Object.entries(s.accounts).map(([k,a])=>[k,a.balance])),acb=opening.nonreg*.7;
   for(const r of project(s)){
    for(const k of ['rrsp','nonreg','tfsa']){
-    const cash=k==='nonreg'?r.cashReinvestment-r.distributionCash:0;
+    const cash=r.reinvestmentByAccount[k]-(k==='nonreg'?r.distributionCash:0);
     near(r[k],opening[k]+r.growthByAccount[k]+r.savingsByAccount[k]-r.withdrawalsByAccount[k]+cash);
     assert.ok(r[k]>=0);
    }
-   near(r.acb,acb-r.nonregCostBasisSold+r.cashReinvestment+r.savingsByAccount.nonreg);
+   near(r.acb,acb-r.nonregCostBasisSold+r.nonregReinvestment+r.savingsByAccount.nonreg);
    near(r.benefitIncome+r.withdrawals+r.distributionCash+r.shortfall+r.externalTaxPaid,r.expenses+r.taxPaid+r.cashReinvestment);
    near(r.tax,r.taxPaid+r.unpaidTax);near(r.taxPaid,r.portfolioTaxPaid+r.externalTaxPaid);
    near(r.withdrawals,r.rrspWithdrawal+r.nonregWithdrawal+r.tfsaWithdrawal);

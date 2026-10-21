@@ -126,8 +126,13 @@ function simulate(s){
    growthByAccount[k]=b[k]*returnRate;growth+=growthByAccount[k];
    b[k]=positive(b[k]+growthByAccount[k]-(k==='nonreg'?p.distributionCash:0));
   }
-  // Cash distributions consumed for expenses/tax never add to ACB; reinvested cash does.
-  b.nonreg+=cashReinvestment;acb+=cashReinvestment;
+  // Apply the user's fixed annual surplus allocation once, after growth and tax.
+  // This is a planning allocation cap; personal TFSA contribution room is assumed.
+  const tfsaReinvestment=Math.min(14000,cashReinvestment),nonregReinvestment=cashReinvestment-tfsaReinvestment;
+  const reinvestmentByAccount={tfsa:tfsaReinvestment,rrsp:0,nonreg:nonregReinvestment};
+  b.tfsa+=tfsaReinvestment;b.nonreg+=nonregReinvestment;
+  // Only deposits to non-registered investments add to their cost basis.
+  acb+=nonregReinvestment;
   let savings=0;
   if(!retired)for(const k of ['tfsa','rrsp','nonreg']){
    const amount=s.accounts[k].saving,destination=k==='rrsp'&&age>71?'nonreg':k;
@@ -137,7 +142,7 @@ function simulate(s){
   loss=positive(loss-p.gains);
   rows.push({year:2026+t,age,retired,scheduledRrspWithdrawal,pensionIncome,cppIncome,oasIncome,benefitIncome,benefitTax,benefitSurplus,
    expenses,savings,growth,tax:p.tax,taxPaid,externalTaxPaid,portfolioTaxPaid,unpaidTax,shortfall,withdrawals:totalDraw,withdrawalsByAccount,
-   growthByAccount,savingsByAccount,rrifReinvestment,cashReinvestment,distributionReinvestment,
+   growthByAccount,savingsByAccount,reinvestmentByAccount,tfsaReinvestment,nonregReinvestment,rrifReinvestment,cashReinvestment,distributionReinvestment,
    rrspWithdrawal:rrspDraw,nonregWithdrawal:nonregSale,tfsaWithdrawal:tfsaSale,rrif:minimum,
    rrspEndBalance:age>=71?0:b.rrsp,rrifEndBalance:age>=71?b.rrsp:0,rrspToRrifTransfer:age===71?b.rrsp:0,
    rrspCashWithdrawal:age<=71?rrspDraw:0,rrifCashWithdrawal:age>=72?rrspDraw:0,

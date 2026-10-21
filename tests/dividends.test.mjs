@@ -53,9 +53,9 @@ test('capital gains, dividend credit and tax top-up solve together rather than t
 });
 test('unused distributions are reinvested at year-end once; total return and ACB do not count gross-up as cash',()=>{
  const [r]=project(scenario());near(r.growth,7000);near(r.distributionCash,2000);near(r.cashReinvestment,2000);
- near(r.nonreg,107000);near(r.acb,102000);near(r.taxableEligibleDividends,1380);
+ near(r.nonreg,105000);near(r.tfsa,2000);near(r.acb,100000);near(r.taxableEligibleDividends,1380);
  const s=scenario({age:59,retire:60,death:60,workIncome:100000});s.accounts.nonreg.saving=5000;
- const [work]=project(s);near(work.nonreg,112000);near(work.acb,107000);near(work.externalTaxPaid,work.tax);near(work.withdrawals,0);
+ const [work]=project(s);near(work.nonreg,110000);near(work.tfsa,2000);near(work.acb,105000);near(work.externalTaxPaid,work.tax);near(work.withdrawals,0);
 });
 test('bond cash interest stays ordinary and total return is not counted again as price growth',()=>{
  const s=scenario({expenses:4000});s.accounts.nonreg.equity=0;const [r]=project(s);

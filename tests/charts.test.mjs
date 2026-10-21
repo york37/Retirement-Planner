@@ -42,7 +42,7 @@ function renderCharts(state,availableWidth=800,taxView='amounts'){
    setAttribute(key,value){this.attributes[key]=String(value);},
    addEventListener(key,handler){this.handlers[key]=handler;},
    getBoundingClientRect(){
-    const container=id==='chart'?'chart-container':id==='tax-chart'?'tax-chart-container':null;
+    const container=id==='chart'?'chart-container':id==='tax-chart'?'tax-chart-container':id==='income-chart'?'income-chart-container':null;
     return {left:0,width:container?Number.parseFloat(node(container).style.width)||availableWidth:availableWidth};
    }
   };
@@ -54,17 +54,22 @@ function renderCharts(state,availableWidth=800,taxView='amounts'){
  const compact=value=>value>=1e6?'$'+(value/1e6).toFixed(2)+'M':value>=1000?'$'+(value/1000).toFixed(0)+'K':money(value);
  const rows=project(state),app=readFileSync(new URL('../dist/app.js',import.meta.url),'utf8');
  const functions=app.slice(app.indexOf('function positionGraphTooltip('),app.indexOf('const columns='));
- const context={state,rows,taxView,$:selector=>node(selector.slice(1)),money,compact,percent:value=>value===null?'—':(value*100).toFixed(2)+'%',ACCOUNT_DISPLAY,withdrawalAmounts,retirementTimeline,timelineWidth,realAnnualTax};
- vm.runInNewContext(functions+'\nrenderTaxChart();renderChart();',context);
+ const context={state,rows,taxView,overviewView:'portfolio',$:selector=>node(selector.slice(1)),money,compact,percent:value=>value===null?'—':(value*100).toFixed(2)+'%',ACCOUNT_DISPLAY,withdrawalAmounts,retirementTimeline,timelineWidth,realAnnualTax};
+ vm.runInNewContext(functions+'\nrenderTaxChart();renderChart();renderIncomeChart();',context);
   const buttons=['rate','amounts'].map(view=>{
   const button=node(view==='rate'?'tax-rate-tab':'tax-amounts-tab');
   button.dataset={taxView:view};button.classList={toggle(name,value){button[name]=value;}};button.focus=()=>{button.focused=true;};
   return button;
  });
- context.document={querySelectorAll:()=>buttons};
+ const overviewButtons=['portfolio','income'].map(view=>{
+  const button=node(view==='portfolio'?'overview-portfolio-tab':'overview-income-tab');
+  button.dataset={overviewView:view};button.classList={toggle(name,value){button[name]=value;}};button.focus=()=>{button.focused=true;};
+  return button;
+ });
+ context.document={querySelectorAll:selector=>selector==='[data-overview-view]'?overviewButtons:buttons};
  const tabSetup=app.slice(app.indexOf('function selectTaxView('),app.indexOf("for(const id of ['method-top'"));
  vm.runInNewContext(tabSetup,context);
- return {nodes,node,rows,money,buttons};
+ return {nodes,node,rows,money,buttons,overviewButtons};
 }
 
 test('both graphs render matching retirement ticks and tax hover exposes annual payable and rate',()=>{
@@ -80,6 +85,26 @@ test('both graphs render matching retirement ticks and tax hover exposes annual 
  assert.equal((nominalPath.match(/[ML]/g)||[]).length,24);assert.notEqual(nominalPath,realPath);
  node('tax-chart-hit').handlers.pointermove({clientX:0});
  const first=rows.find(row=>row.age===67);
+ const chartMarkup=node('chart').innerHTML;
+ const areas=[...chartMarkup.matchAll(/id="balance-area-(\w+)" data-account="\w+" d="([^"]+)" fill="([^"]+)"/g)];
+ assert.deepEqual(areas.map(([,account])=>account),['tfsa','nonreg','rrsp']);
+ const points=areas.map(([,account,path,colour])=>{
+  assert.equal(colour,ACCOUNT_DISPLAY[account].colour);
+  return [...path.matchAll(/[ML]([\d.]+),([\d.]+)/g)].map(([,x,y])=>({x:Number(x),y:Number(y)}));
+ });
+ const plotted=rows.filter(row=>row.retired),count=plotted.length;
+ for(let i=0;i<count;i++){
+  const bottom=points[0][2*count-1-i].y,top=points[2][i].y,height=bottom-top;
+  assert.ok(Math.abs(points[0][i].y-points[1][2*count-1-i].y)<.02);
+  assert.ok(Math.abs(points[1][i].y-points[2][2*count-1-i].y)<.02);
+  for(const [layer,account] of ['tfsa','nonreg','rrsp'].entries()){
+   const thickness=points[layer][2*count-1-i].y-points[layer][i].y;
+   assert.ok(thickness>=0);
+   if(height>0)assert.ok(Math.abs(thickness/height-plotted[i][account]/plotted[i].ledger)<.001);
+  }
+ }
+ assert.ok(chartMarkup.includes('id="portfolio-real-line"'));
+ assert.ok(chartMarkup.includes('stroke-dasharray="7 5"'));
  assert.ok(node('tax-tooltip').innerHTML.includes('Age 67'));
  assert.ok(node('tax-tooltip').innerHTML.includes(money(first.totalIncomeTax)));
  assert.ok(node('tax-tooltip').innerHTML.includes((first.effectiveTaxRate*100).toFixed(2)+'%'));
@@ -87,6 +112,7 @@ test('both graphs render matching retirement ticks and tax hover exposes annual 
  assert.ok(node('tax-tooltip').innerHTML.includes('Age 90'));
  node('chart-hit').handlers.pointermove({clientX:0});
  assert.ok(node('tooltip').innerHTML.includes('Age 67'));
+ for(const account of ['rrsp','nonreg','tfsa'])assert.ok(node('tooltip').innerHTML.includes(money(first[account])));
  node('chart-hit').handlers.pointerdown({clientX:10000});
  assert.ok(node('tooltip').innerHTML.includes('Age 90'));
  node('tax-chart').onpointerleave();assert.equal(node('tax-tooltip').hidden,true);
@@ -153,4 +179,76 @@ test('tax readout identifies gross taxable income as the rate basis for the $180
  assert.equal(node('tax-calculation-total').textContent,'$111,226');
  assert.equal(node('tax-calculation-expenses').textContent,'$180,000');
  assert.equal(node('tax-calculation-withdrawals').textContent,'$291,226');
+});
+
+test('income stack reconciles to actual annual cash without counting distributions or RRIF minimums twice',()=>{
+ const state=structuredClone(DEFAULTS);
+ Object.assign(state,{age:60,retire:62,death:75,pensionIncome:24000,pensionStart:64,cppIncome:12000,oasIncome:8500,retiredIncome:10000,expenses:80000,annualRrspWithdrawal:20000});
+ const {node,rows,money}=renderCharts(state,800);
+ const plotted=rows.filter(row=>row.retired),count=plotted.length,markup=node('income-chart').innerHTML;
+ const keys=['pensionIncome','cppIncome','oasIncome','rrspWithdrawal','nonregWithdrawal','tfsaWithdrawal','distributionCash'];
+ const areas=[...markup.matchAll(/id="income-area-\w+" data-source="(\w+)" d="([^"]+)" fill="([^"]+)"/g)];
+ assert.deepEqual(areas.map(([,key])=>key),keys);assert.equal(new Set(areas.map(([,key,path,colour])=>colour)).size,7);
+ assert.deepEqual([...markup.matchAll(/data-age="(\d+)"/g)].map(([,age])=>Number(age)),[62,67,72]);
+ const points=areas.map(([,key,path])=>[...path.matchAll(/[ML]([\d.]+),([\d.]+)/g)].map(([,x,y])=>({x:Number(x),y:Number(y)})));
+ const height=365-20-62,pixelPerDollar=(points[0][2*count-1].y-points.at(-1)[0].y)/keys.reduce((total,key)=>total+plotted[0][key],0);
+ assert.ok(pixelPerDollar>0);
+ for(let i=0;i<count;i++){
+  const row=plotted[i],total=row.benefitIncome+row.withdrawals+row.distributionCash;
+  const totalPixels=points[0][2*count-1-i].y-points.at(-1)[i].y;
+  assert.ok(Math.abs(totalPixels-total*pixelPerDollar)<.04);
+  for(const [layer,key] of keys.entries()){
+   const upper=points[layer][i].y,lower=points[layer][2*count-1-i].y;
+   assert.ok(Math.abs(lower-upper-row[key]*pixelPerDollar)<.04);
+   assert.ok(upper>=20-.01&&lower<=20+height+.01);
+   if(layer>0)assert.equal(lower,points[layer-1][i].y);
+  }
+ }
+ const first=plotted[0];node('income-chart-hit').handlers.pointermove({clientX:0});
+ assert.ok(node('income-tooltip').innerHTML.includes('Age 62'));
+ assert.ok(node('income-tooltip').innerHTML.includes('Total cash sources<span>'+money(first.benefitIncome+first.withdrawals+first.distributionCash)));
+ node('income-chart-hit').handlers.pointerdown({clientX:10000});
+ assert.ok(node('income-tooltip').innerHTML.includes('Age 75'));
+ const last=plotted.at(-1);
+ for(const key of keys)assert.ok(node('income-tooltip').innerHTML.includes(money(last[key])));
+ node('income-chart').onpointerleave();assert.equal(node('income-tooltip').hidden,true);
+ assert.ok(!/NaN|undefined|Infinity/.test(markup));
+});
+
+test('overview tabs switch charts with click, keyboard, focus and matching panel ARIA',()=>{
+ const {node,overviewButtons}=renderCharts(structuredClone(DEFAULTS),300);
+ overviewButtons[1].onclick();
+ assert.equal(node('overview-portfolio-panel').hidden,true);assert.equal(node('overview-income-panel').hidden,false);
+ assert.equal(overviewButtons[1].attributes['aria-selected'],'true');assert.equal(overviewButtons[0].tabIndex,-1);
+ let prevented=false;
+ overviewButtons[1].handlers.keydown({key:'ArrowRight',preventDefault(){prevented=true;}});
+ assert.ok(prevented);assert.equal(overviewButtons[0].focused,true);assert.equal(node('overview-income-panel').hidden,true);
+ overviewButtons[0].handlers.keydown({key:'End',preventDefault(){}});
+ assert.equal(overviewButtons[1].tabIndex,0);assert.equal(node('overview-income-panel').hidden,false);
+ overviewButtons[1].handlers.keydown({key:'Home',preventDefault(){}});
+ assert.equal(node('overview-portfolio-panel').hidden,false);
+ const html=readFileSync(new URL('../dist/index.html',import.meta.url),'utf8');
+ for(const view of ['portfolio','income']){
+  assert.ok(html.includes('aria-controls="overview-'+view+'-panel"'));
+  assert.ok(html.includes('role="tabpanel" aria-labelledby="overview-'+view+'-tab"'));
+ }
+});
+
+test('income chart handles zero cash, a single-year horizon and narrow screens without invalid geometry',()=>{
+ const state=structuredClone(DEFAULTS);Object.assign(state,{age:65,retire:65,death:65,expenses:0,annualRrspWithdrawal:0,workIncome:0,retiredIncome:0});
+ for(const account of Object.values(state.accounts)){account.balance=0;account.saving=0;}
+ let rendered=renderCharts(state,280),markup=rendered.node('income-chart').innerHTML;
+ assert.ok(markup.includes('No cash sources projected'));
+ assert.ok(!/NaN|undefined|Infinity/.test(markup));
+ rendered.node('income-chart-hit').handlers.pointerdown({clientX:140});
+ assert.ok(rendered.node('income-tooltip').innerHTML.includes('Total cash sources<span>$0'));
+ state.pensionIncome=24000;rendered=renderCharts(state,280);markup=rendered.node('income-chart').innerHTML;
+ const area=markup.match(/id="income-area-pensionIncome"[^>]* d="([^"]+)"/)[1];
+ const coordinates=[...area.matchAll(/[ML]([\d.]+),([\d.]+)/g)].map(([,x,y])=>({x:Number(x),y:Number(y)}));
+ assert.ok(coordinates[1].x>coordinates[0].x);assert.ok(coordinates[2].y>coordinates[1].y);
+ assert.ok(!markup.includes('No cash sources projected'));assert.ok(!/NaN|undefined|Infinity/.test(markup));
+ rendered.node('income-chart-hit').handlers.pointerdown({clientX:140});
+ assert.ok(rendered.node('income-tooltip').innerHTML.includes('$24,000'));
+ const many={...state,death:120};rendered=renderCharts(many,280);
+ assert.ok(Number.parseFloat(rendered.node('income-chart-container').style.width)>280);
 });

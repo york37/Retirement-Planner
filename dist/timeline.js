@@ -1,4 +1,4 @@
-// Both time-series charts share the same retirement range and five-year age ticks.
+// All time-series charts share the same retirement range and five-year age ticks.
 export function retirementTimeline(rows,retirementAge){
  const data=rows.filter(row=>row.age>=retirementAge);
  const ticks=data.flatMap((row,i)=>(row.age-retirementAge)%5===0?[i]:[]);

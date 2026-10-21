@@ -34,11 +34,11 @@ test('taxable pension covers spending before TFSA withdrawals and investment gro
  near(r.shortfall,0);near(r.benefitSurplus,0);
 });
 
-test('pension surplus is invested once in non-registered assets and increases cost basis',()=>{
+test('pension surplus uses TFSA first and only overflow increases non-registered cost basis',()=>{
  const s=scenario({pensionIncome:60000,pensionStart:60,expenses:20000}),[r]=project(s);
  const tax=incomeTax(60000,'ON',1,60,60000);
- near(r.withdrawals,0);near(r.benefitSurplus,60000-tax-20000);near(r.nonreg,r.benefitSurplus);
- near(r.acb,r.nonreg);near(r.rrifReinvestment,0);near(r.tfsa,200000);
+ near(r.withdrawals,0);near(r.benefitSurplus,60000-tax-20000);near(r.nonreg,r.benefitSurplus-14000);
+ near(r.acb,r.nonreg);near(r.rrifReinvestment,0);near(r.tfsa,214000);
  near(r.ledger,200000+60000-20000-tax);
 });
 
@@ -47,7 +47,7 @@ test('pension before retirement is saved while scheduled contributions still occ
  s.accounts.rrsp.saving=10000;
  const [r]=project(s),tax=incomeTax(20000,'ON',1,60,30000);
  near(r.expenses,0);near(r.pensionIncome,30000);near(r.taxableIncome,20000);near(r.tax,tax);
- near(r.nonreg,30000-tax);near(r.rrsp,10000);near(r.savings,10000);
+ near(r.nonreg,30000-tax-14000);near(r.tfsa,214000);near(r.rrsp,10000);near(r.savings,10000);
 });
 
 test('CPP/OAS are taxable but do not receive the eligible employer-pension credit',()=>{
@@ -88,7 +88,7 @@ test('benefits, manual RRSP payments and distributions reconcile annually across
   let opening=Object.fromEntries(Object.entries(s.accounts).map(([key,a])=>[key,a.balance]));
   for(const r of project(s)){
    for(const key of ['tfsa','rrsp','nonreg']){
-    const surplus=key==='nonreg'?r.cashReinvestment-r.distributionCash:0;
+    const surplus=r.reinvestmentByAccount[key]-(key==='nonreg'?r.distributionCash:0);
     near(r[key],opening[key]+surplus+r.growthByAccount[key]+r.savingsByAccount[key]-r.withdrawalsByAccount[key]);
    }
    near(r.benefitIncome+r.withdrawals+r.distributionCash+r.shortfall+r.externalTaxPaid,r.expenses+r.taxPaid+r.cashReinvestment);
