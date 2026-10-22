@@ -24,3 +24,75 @@ input[data-money]{padding-right:30px}.money-stepper{position:absolute;right:5px;
 .portfolio-legend{flex-wrap:wrap;gap:10px 18px}.portfolio-legend .legend-dot{height:10px;width:14px;opacity:.65}.portfolio-real-key{display:inline-block;width:20px;border-top:3px dashed #356582}.portfolio-legend .chart-unit{white-space:nowrap}
 
 .overview-chart-tabs{display:flex;flex-wrap:wrap;gap:6px;border-bottom:1px solid var(--line);margin-top:20px}.overview-chart-tabs button{border:0;border-bottom:3px solid transparent;background:transparent;color:#7a8b6e;font-size:13.75px;padding:11px 14px}.overview-chart-tabs button.active{border-bottom-color:var(--green);color:var(--green);font-weight:650;background:#f1f5eb}.overview-chart-tabs button:hover{background:#f1f5eb}.overview-chart-subtitle{font-size:13px;line-height:1.6;color:#7b8b6e;margin:16px 0 0}.income-legend{flex-wrap:wrap;gap:10px 18px;margin-top:18px}.income-legend .legend-dot{height:10px;width:14px;opacity:.7}.income-legend .chart-unit{white-space:nowrap}#income-chart{width:100%;height:auto;display:block;touch-action:pan-y}#income-chart text{font-family:system-ui,sans-serif}
+
+/* Appearance is independent of financial inputs and works without a network. */
+:root{color-scheme:light}
+.canada-label{display:inline-flex;align-items:center;gap:7px;white-space:nowrap}
+.theme-toggle{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:36px;padding:7px 10px;border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--ink);font-size:12.5px;white-space:nowrap}
+.theme-toggle:hover{background:#edf2e7}
+.theme-toggle-track{display:block;width:28px;height:16px;border-radius:12px;background:#b7c3b5;padding:2px;flex-shrink:0}
+.theme-toggle-track>span{display:block;width:12px;height:12px;border-radius:50%;background:#fff;transition:transform .15s}
+.theme-toggle[aria-pressed=true] .theme-toggle-track{background:#7ba984}
+.theme-toggle[aria-pressed=true] .theme-toggle-track>span{transform:translateX(12px)}
+@media(max-width:930px){.canada-label{display:none}}
+@media(max-width:700px){.canada-label{display:none}.header-right{gap:8px}.theme-toggle{padding:7px 8px}.icon-button{margin-left:0}}
+@media(max-width:380px){.brand{font-size:25px;gap:5px}.brandmark{font-size:36px}.header-right{gap:6px}.theme-toggle{font-size:11.25px;padding:7px 6px;gap:5px}}
+@media(prefers-reduced-motion:reduce){.theme-toggle-track>span{transition:none}}
+
+:root[data-theme=dark]{color-scheme:dark;--ink:#e3eee7;--muted:#b0c2b5;--green:#acd4ad;--cream:#111a17;--line:#3b4d41;--surface:#1b2821;--surface-raised:#26392d;--blue:#94bfd8;--gold:#e6bc78}
+:root[data-theme=dark] :is(header,aside,.summary-card,.chart-card,.mix-card,.prose,.tax-summary,.table-scroll){background:var(--surface);border-color:var(--line)}
+:root[data-theme=dark] :is(.primary-summary,.insight-card,.tax-calculation,.source-note,.method-disclaimer,.alert){background:#22362a;border-color:var(--line)}
+:root[data-theme=dark] :is(.header-year,.account .account-tag,.segmented,.segmented button.active,.mini-tag,.step){background:var(--surface-raised);border-color:var(--line);color:var(--muted)}
+:root[data-theme=dark] :is(input[type=number],input[data-money],select){background:#142219;border-color:#526657;color:var(--ink)}
+:root[data-theme=dark] input::placeholder{color:#a7b7aa}
+:root[data-theme=dark] :is(.theme-toggle,.secondary-button,.reset-button,.icon-button){background:var(--surface);color:var(--ink);border-color:#526657}
+:root[data-theme=dark] :is(.theme-toggle,.secondary-button,.reset-button,.icon-button):hover{background:#304735}
+:root[data-theme=dark] .primary-button{background:var(--green);color:#14271a}
+:root[data-theme=dark] .primary-button:hover{background:#c0e3bb}
+:root[data-theme=dark] :is(a,.text-button,.text-button:hover,.advanced summary,.verified-rates summary,.verified-rates a,.prose a){color:#bdddb3}
+:root[data-theme=dark] :is(label,.field-help,.source-note,.metric-label,.summary-card small,.metric-foot,.chart-heading p,.chart-legend,.chart-unit,.chart-explanation,.chart-bottom,.chart-bottom span:last-child,.overview-chart-subtitle,.withdrawal-caption,.withdrawal-legend,.withdrawal-legend>span:first-child,.table-heading p,.tax-location,.tax-definition,.verified-rates,.tax-calculation-year,.tax-calculation-equation small,.tax-calculation>p:last-of-type,.tax-cash-context,.tax-period,.tax-metrics span,.tax-metrics small,.tax-summary-heading>span,.tax-bracket-grid caption,.prose,.eyebrow,.brand-sub,.currency-note,.allocation-label,.timeline-caption,.private-note,.private-note small,.results-heading>div,.mix-footer,.insight-card p,.submit-area p,footer,.footer-brand,.donut-wrap small,.no-withdrawal){color:var(--muted)}
+:root[data-theme=dark] :is(.brand,.tax-location strong,.allocation-label strong,.timeline-caption span:first-child,.mix-footer strong,#mix-legend strong,.tax-calculation-equation strong,.tax-cash-context strong,.prose h3,.prose b){color:var(--ink)}
+:root[data-theme=dark] #mix-legend>div{color:var(--muted)}
+:root[data-theme=dark] :is(.brand-divider,.timeline-mini span:last-child){background:#405644}
+:root[data-theme=dark] .input-affix>span{color:var(--muted)}
+:root[data-theme=dark] input[type=range]{background:linear-gradient(to right,var(--green) var(--fill),#405644 var(--fill))}
+:root[data-theme=dark] input[type=range]::-webkit-slider-thumb{border-color:var(--surface)}
+:root[data-theme=dark] .money-stepper button{color:#c3dfb7}
+:root[data-theme=dark] .money-stepper button:hover{background:#304735}
+:root[data-theme=dark] :is(.aside-head,.form-section,.account,.advanced,.tax-location,.metric-foot,.tabs,.chart-bottom,.chart-explanation,.mix-footer,.tax-cash-context,.tax-bracket-grid td,.verified-rates,.overview-chart-tabs,.tax-chart-tabs,footer){border-color:var(--line)}
+:root[data-theme=dark] .method-accounts{border-color:#6b9567}
+:root[data-theme=dark] :is(.tabs button,.overview-chart-tabs button,.tax-chart-tabs button){color:var(--muted)}
+:root[data-theme=dark] .tabs button.active{color:#d0eac5;border-color:var(--green)}
+:root[data-theme=dark] :is(.overview-chart-tabs button,.tax-chart-tabs button):is(.active,:hover){background:#2c4332;color:#d0eac5;border-bottom-color:var(--green)}
+:root[data-theme=dark] th{background:#2c4132;color:var(--ink)}
+:root[data-theme=dark] td{background:var(--surface);color:var(--muted);border-color:var(--line)}
+:root[data-theme=dark] th:first-child{background:#2c4132}
+:root[data-theme=dark] td:first-child{background:var(--surface)}
+:root[data-theme=dark] tr.retirement-row td{background:#2a4030;color:var(--ink)}
+:root[data-theme=dark] tr:hover td{background:#2d4032}
+:root[data-theme=dark] .account-rrsp{--account-colour:#d1b0f0}
+:root[data-theme=dark] .account-nonreg{--account-colour:#edc281}
+:root[data-theme=dark] .account-tfsa{--account-colour:#8bd7c8}
+:root[data-theme=dark] .table-scroll :is(th.account-rrsp,th.account-nonreg,th.account-tfsa,td.account-cell){color:var(--account-colour)}
+:root[data-theme=dark] .alert.warning{background:#3a2e1d;color:#f1cf91;border-color:#705b35}
+:root[data-theme=dark] #stale{background:#3a321d;color:#f0dba3;border-color:#6f633b}
+:root[data-theme=dark] #errors:not(:empty){background:#412723;color:#ffbbab}
+:root[data-theme=dark] :is(.graph-tooltip,#tooltip){background:#0d1711;color:#edf5ed;border:1px solid #66846a;box-shadow:0 4px 20px #0005}
+:root[data-theme=dark] .legend-dot.nominal{background:#acd593}
+:root[data-theme=dark] .legend-dot.real{background:#94bfd8}
+:root[data-theme=dark] .portfolio-real-key{border-color:#94bfd8}
+:root[data-theme=dark] :is(#chart,#tax-chart,#income-chart) text{fill:var(--muted)}
+:root[data-theme=dark] #chart text[fill="#8765ad"]{fill:#d1b0f0}
+:root[data-theme=dark] #chart text[fill="#bd8841"]{fill:#edc281}
+:root[data-theme=dark] #chart text[fill="#338779"]{fill:#8bd7c8}
+:root[data-theme=dark] :is(#chart,#tax-chart,#income-chart) :is([stroke="#e8eddf"],[stroke="#eff2e9"]){stroke:var(--line)}
+:root[data-theme=dark] #chart rect[fill="#f5f8f0"]{fill:#18271d}
+:root[data-theme=dark] #chart rect[fill="#eaf0e0"]{fill:#304935}
+:root[data-theme=dark] #chart rect[fill="#f1f3ed"]{fill:#354a3a}
+:root[data-theme=dark] #chart text[fill="#8a9d71"]{fill:#cee1bf}
+:root[data-theme=dark] :is(#chart,#tax-chart,#income-chart) :is([stroke="#426b35"],[stroke="#254f42"]){stroke:#acd593}
+:root[data-theme=dark] :is(#chart,#tax-chart,#income-chart) :is([fill="#426b35"],[fill="#254f42"]){fill:#acd593}
+:root[data-theme=dark] :is(#chart,#tax-chart) :is([stroke="#356582"],[stroke="#7297ad"]){stroke:#94bfd8}
+:root[data-theme=dark] :is(#chart,#tax-chart) :is([fill="#356582"],[fill="#7297ad"]){fill:#94bfd8}
+:root[data-theme=dark] :is(#account-balance-stack,#income-source-stack) path[fill]{fill-opacity:.7}
+:root[data-theme=dark] #donut circle[stroke="#f1f4ec"]{stroke:#405644}

@@ -1,11 +1,12 @@
 import {readFile,writeFile} from 'node:fs/promises';
 const html=await readFile('dist/index.html','utf8');
 const css=await readFile('dist/styles.css','utf8');
+const theme=await readFile('dist/theme.js','utf8');
 const engine=(await readFile('dist/engine.js','utf8')).replace(/^export /gm,'');
 const storage=(await readFile('dist/storage.js','utf8')).replace(/^export /gm,'');
 const moneyInputs=(await readFile('dist/money-inputs.js','utf8')).replace(/^export /gm,'');
 const withdrawals=(await readFile('dist/withdrawals.js','utf8')).replace(/^export /gm,'');
 const timeline=(await readFile('dist/timeline.js','utf8')).replace(/^export /gm,'');
 const app=(await readFile('dist/app.js','utf8')).replace(/^import .*?;\r?\n/gm,'');
-await writeFile('Northstar.html',html.replace('<link rel="stylesheet" href="styles.css">',()=>`<style>${css}</style>`).replace('<script type="module" src="app.js"></script>',()=>`<script>${engine}\n${storage}\n${moneyInputs}\n${withdrawals}\n${timeline}\n${app}</script>`));
+await writeFile('Northstar.html',html.replace('<script src="theme.js"></script>',()=>`<script>${theme}</script>`).replace('<link rel="stylesheet" href="styles.css">',()=>`<style>${css}</style>`).replace('<script type="module" src="app.js"></script>',()=>`<script>${engine}\n${storage}\n${moneyInputs}\n${withdrawals}\n${timeline}\n${app}</script>`));
 console.log('Built Northstar.html — open directly in any modern browser.');
